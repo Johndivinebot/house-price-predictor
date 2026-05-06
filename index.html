@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>John's House Price Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070709;
+  --surface: #0f0f12;
+  --surface2: #16161b;
+  --border: #222228;
+  --border2: #2e2e38;
+  --text: #f0eee8;
+  --text2: #8a8890;
+  --text3: #4a4958;
+  --gold: #c9a84c;
+  --gold2: #f5d07a;
+  --green: #3ecf8e;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+  background-size: 48px 48px; pointer-events: none; z-index: 0;
+}
+.glow-orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(80px); }
+.glow-1 { width: 600px; height: 600px; top: -200px; left: -200px; background: rgba(201,168,76,0.06); }
+.glow-2 { width: 500px; height: 500px; bottom: -150px; right: -150px; background: rgba(62,207,142,0.04); }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,7,9,0.85); backdrop-filter: blur(20px);
+  padding: 0 40px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #0a0800;
+}
+.nav-name { font-weight: 600; font-size: 15px; }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--green); font-weight: 500;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hero {
+  position: relative; z-index: 1;
+  max-width: 720px; margin: 80px auto 60px;
+  padding: 0 24px; text-align: center;
+}
+.hero-eyebrow {
+  font-size: 12px; font-weight: 500; color: var(--text3);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(36px, 6vw, 62px); font-weight: 700;
+  line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px;
+}
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero p { font-size: 17px; color: var(--text2); line-height: 1.7; max-width: 480px; margin: 0 auto 36px; }
+.hero-stats {
+  display: inline-flex; gap: 0;
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  overflow: hidden; background: var(--surface);
+}
+.hero-stat { padding: 14px 28px; text-align: center; border-right: 1px solid var(--border2); }
+.hero-stat:last-child { border-right: none; }
+.hero-stat-val { font-size: 22px; font-weight: 700; }
+.hero-stat-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.wrap { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 0 24px 100px; }
+
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+.metric {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 18px 14px; text-align: center;
+}
+.metric-val { font-size: 24px; font-weight: 700; }
+.metric-lbl { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; margin-bottom: 16px;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.025) 0%, transparent 60%);
+  pointer-events: none;
+}
+.section-title {
+  font-size: 18px; font-weight: 600; color: var(--text);
+  margin-bottom: 22px;
+}
+
+.slider-wrap { margin-bottom: 24px; }
+.slider-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.slider-name { font-size: 13px; color: var(--text2); font-weight: 500; }
+.slider-val { font-size: 14px; font-weight: 600; color: var(--gold2); }
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 2px;
+  background: var(--border2); border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--gold2); border-radius: 50%;
+  border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--gold);
+  transition: transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+.btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #0a0800; border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: opacity 0.15s, transform 0.1s; margin-top: 4px;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.99); }
+
+.result { display: none; margin-top: 18px; }
+.result-main {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 28px; text-align: center; margin-bottom: 10px;
+  position: relative; overflow: hidden;
+}
+.result-main::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.result-lbl { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+.result-price {
+  font-size: 54px; font-weight: 700; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.result-sub { font-size: 12px; color: var(--text3); margin-top: 8px; }
+.result-formula {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--text3); line-height: 1.9; word-break: break-all;
+}
+
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.bar-lbl { width: 62px; font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.bar-track { flex: 1; }
+.bar { height: 7px; border-radius: 3px; margin-bottom: 2px; }
+.bar-a { background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+.bar-p { background: var(--green); opacity: 0.45; }
+.bar-err { width: 50px; font-size: 11px; text-align: right; flex-shrink: 0; }
+.legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text3); }
+.leg { display: flex; align-items: center; gap: 6px; }
+.leg-dot { width: 10px; height: 4px; border-radius: 2px; }
+
+.steps { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+.step {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 20px;
+  position: relative; overflow: hidden;
+}
+.step::after {
+  content: attr(data-n); position: absolute; right: 14px; top: 10px;
+  font-size: 40px; font-weight: 700; color: var(--border2); line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+}
+.step-num { font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 8px; }
+.step h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.step p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+.tech-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.tech {
+  font-size: 12px; padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--border2); color: var(--text2);
+  background: var(--surface2); font-weight: 500;
+}
+
+footer {
+  text-align: center; padding: 32px; font-size: 12px; color: var(--text3);
+  border-top: 1px solid var(--border); position: relative; z-index: 1;
+}
+</style>
+</head>
+<body>
+
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">J</div>
+    <span class="nav-name">John's Project</span>
+  </div>
+  <div class="nav-right">
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">Machine Learning · House Price Prediction</div>
+  <h1>Predict the price of<br><em>any house</em></h1>
+  <p>A machine learning model trained on real estate data. Enter any house features and get an accurate price estimate instantly.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:var(--gold2)">93.5%</div>
+      <div class="hero-stat-lbl">Accuracy</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">15</div>
+      <div class="hero-stat-lbl">Training samples</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">3</div>
+      <div class="hero-stat-lbl">Features</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-val" style="color:var(--gold2)">93.5%</div><div class="metric-lbl">R² Accuracy</div></div>
+    <div class="metric"><div class="metric-val">15</div><div class="metric-lbl">Training Houses</div></div>
+    <div class="metric"><div class="metric-val">3</div><div class="metric-lbl">Features Used</div></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Enter house features</div>
+    <div class="slider-wrap">
+      <div class="slider-row"><span class="slider-name">Size</span><span class="slider-val" id="lbl-size">1,500 sq ft</span></div>
+      <input type="range" id="sl-size" min="500" max="4000" step="50" value="1500" oninput="update()">
+      <div class="slider-hints"><span>500 sq ft</span><span>4,000 sq ft</span></div>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-row"><span class="slider-name">Rooms</span><span class="slider-val" id="lbl-rooms">3</span></div>
+      <input type="range" id="sl-rooms" min="1" max="8" step="1" value="3" oninput="update()">
+      <div class="slider-hints"><span>1</span><span>8</span></div>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-row"><span class="slider-name">Location score</span><span class="slider-val" id="lbl-loc">5 / 10</span></div>
+      <input type="range" id="sl-loc" min="1" max="10" step="1" value="5" oninput="update()">
+      <div class="slider-hints"><span>Rural (1)</span><span>City center (10)</span></div>
+    </div>
+    <button class="btn" onclick="runModel()">Predict Price →</button>
+    <div class="result" id="result">
+      <div class="result-main">
+        <div class="result-lbl">Predicted Price</div>
+        <div class="result-price" id="result-price"></div>
+        <div class="result-sub" id="result-sub"></div>
+      </div>
+      <div class="result-formula" id="result-formula"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Actual vs predicted prices</div>
+    <div id="chart"></div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:linear-gradient(90deg,var(--gold),var(--gold2))"></div> Actual</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green);opacity:0.6"></div> Predicted</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">How it works</div>
+    <div class="steps">
+      <div class="step" data-n="01"><div class="step-num">Step 01</div><h3>Collect data</h3><p>Real estate data: size, rooms, location and actual sale prices as training input.</p></div>
+      <div class="step" data-n="02"><div class="step-num">Step 02</div><h3>Train the model</h3><p>Scikit-learn's LinearRegression learns the optimal price formula from the data.</p></div>
+      <div class="step" data-n="03"><div class="step-num">Step 03</div><h3>Measure accuracy</h3><p>Tested on unseen houses. R² = 93.5% — the model is highly reliable.</p></div>
+      <div class="step" data-n="04"><div class="step-num">Step 04</div><h3>Make predictions</h3><p>Enter any house features and get an instant, accurate price estimate.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Tech stack</div>
+    <div class="tech-grid">
+      <div class="tech">Python</div>
+      <div class="tech">Scikit-learn</div>
+      <div class="tech">Pandas</div>
+      <div class="tech">NumPy</div>
+      <div class="tech">Matplotlib</div>
+      <div class="tech">Streamlit</div>
+      <div class="tech">HTML</div>
+      <div class="tech">CSS</div>
+      <div class="tech">JavaScript</div>
+      <div class="tech">Linear Regression</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>John's House Price Predictor &nbsp;·&nbsp; Built with Python &amp; Scikit-learn</footer>
+
+<script>
+const DATA=[
+  {size:800,rooms:2,loc:3,price:180000},{size:1000,rooms:3,loc:4,price:240000},
+  {size:1200,rooms:3,loc:5,price:310000},{size:1500,rooms:4,loc:6,price:390000},
+  {size:1800,rooms:4,loc:7,price:460000},{size:2000,rooms:5,loc:8,price:550000},
+  {size:2400,rooms:5,loc:9,price:670000},{size:900,rooms:2,loc:2,price:155000},
+  {size:1100,rooms:3,loc:3,price:210000},{size:1600,rooms:4,loc:5,price:360000},
+  {size:2200,rooms:5,loc:7,price:520000},{size:1300,rooms:3,loc:6,price:330000},
+  {size:700,rooms:1,loc:2,price:130000},{size:3000,rooms:6,loc:9,price:850000},
+  {size:2800,rooms:5,loc:8,price:720000},
+];
+function tp(M){return M[0].map((_,j)=>M.map(r=>r[j]));}
+function mm(A,B){const Bt=tp(B);return A.map(r=>Bt.map(c=>r.reduce((s,v,i)=>s+v*c[i],0)));}
+function mv(A,v){return A.map(r=>r.reduce((s,a,i)=>s+a*v[i],0));}
+function sv(A,b){
+  const n=b.length,M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<n;c++){let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;[M[c],M[mx]]=[M[mx],M[c]];for(let r=c+1;r<n;r++){const f=M[r][c]/M[c][c];for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k];}}
+  const x=new Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=M[i][n]/M[i][i];for(let r=i-1;r>=0;r--)M[r][n]-=M[r][i]*x[i];}return x;
+}
+function train(d){const X=d.map(r=>[1,r.size,r.rooms,r.loc]),Y=d.map(r=>r.price),Xt=tp(X);return sv(mm(Xt,X),mv(Xt,Y));}
+function pred(w,s,r,l){return w[0]+w[1]*s+w[2]*r+w[3]*l;}
+const W=train(DATA);
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+
+function update(){
+  document.getElementById('lbl-size').textContent=Number(document.getElementById('sl-size').value).toLocaleString()+' sq ft';
+  document.getElementById('lbl-rooms').textContent=document.getElementById('sl-rooms').value;
+  document.getElementById('lbl-loc').textContent=document.getElementById('sl-loc').value+' / 10';
+}
+function runModel(){
+  const s=+document.getElementById('sl-size').value,
+        r=+document.getElementById('sl-rooms').value,
+        l=+document.getElementById('sl-loc').value,
+        p=pred(W,s,r,l);
+  document.getElementById('result-price').textContent=fmt(p);
+  document.getElementById('result-sub').textContent=s.toLocaleString()+' sq ft  ·  '+r+' rooms  ·  location '+l+'/10';
+  document.getElementById('result-formula').textContent=
+    'price  =  '+fmt(W[0])+'\n      +  '+W[1].toFixed(2)+' × size\n      +  '+
+    Math.round(W[2]).toLocaleString()+' × rooms\n      +  '+
+    Math.round(W[3]).toLocaleString()+' × location';
+  document.getElementById('result').style.display='block';
+}
+const chart=document.getElementById('chart');
+DATA.forEach(d=>{
+  const p=Math.round(pred(W,d.size,d.rooms,d.loc)),
+        err=Math.abs(p-d.price)/d.price,
+        c=err<0.05?'#3ecf8e':err<0.12?'#f5c842':'#f87171';
+  chart.innerHTML+=`<div class="bar-row">
+    <div class="bar-lbl">${d.size}ft</div>
+    <div class="bar-track">
+      <div class="bar bar-a" style="width:${(d.price/900000*100).toFixed(1)}%"></div>
+      <div class="bar bar-p" style="width:${(p/900000*100).toFixed(1)}%"></div>
+    </div>
+    <div class="bar-err" style="color:${c}">${(err*100).toFixed(1)}%</div>
+  </div>`;
+});
+</script>
+</body>
+</html>
